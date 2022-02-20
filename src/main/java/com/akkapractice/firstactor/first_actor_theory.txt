@@ -1,0 +1,23 @@
+In Actor we do not define actor what we define is behavior. 
+behavior is code that is used to process messages.
+also we have to define messages that the actor can receive and response.
+
+For creating behavior we have to extends AbstractBehaviour<T>
+it is generic class which needed receiving message as generic type
+
+we have to implement createReceive method which will be handler of
+messages.
+also we have to create an constructor which will take ActorContext<String>
+as argument which is needed by superclass
+
+We can create object of our Behavior class by using a static method 
+which will call Behavior.setup(OurBehavior::new) to
+return Behavior Object. this is all boilerplate and we needed it for
+every behavior we create
+
+Now,for calling actor we have to create ActorSystem which will be the
+parent actor or entry point for the Actor System.All the other actor 
+will be created from this entry point actor.We can create Actor System
+by using helper method called create on ActorSystem which will take 
+Behavior and name of actor as parameters;
+
