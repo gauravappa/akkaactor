@@ -3,7 +3,11 @@ package com.akkapractice.casestudywithmultiplehandler;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.Set;
 
 import akka.actor.typed.ActorRef;
 import akka.actor.typed.Behavior;
@@ -24,15 +28,31 @@ public class RacerControllerBehavior1 extends AbstractBehavior<RacerControllerBe
 	
 	private static void displayRace() {
 		int displayLength=100;
-		for (int i = 0; i < 50; ++i) System.out.println();
+	//	for (int i = 0; i < 50; ++i) System.out.println();
 		System.out.println("Race has been running for " + ((System.currentTimeMillis() - start) / 1000) + " seconds.");
 		System.out.println("    " + new String (new char[displayLength]).replace('\0', '='));
 		
-		int i =0;
-		for (ActorRef<RacerBehavior1.Command> racer : currentPositionMap.keySet()) {
-			System.out.println(i + " : "  + new String (new char[currentPositionMap.get(racer) * displayLength / 100]).replace('\0', '*'));
-		i++;
+		Set<ActorRef<RacerBehavior1.Command>> racerList= currentPositionMap.keySet();
+		
+		List<ActorRef<RacerBehavior1.Command>> racerSortedList=racerList.stream().sorted((a,b)->{
+			
+			return (a.path().toString().substring(a.path().toString().length()-1))
+			.compareTo((b.path().toString().substring(b.path().toString().length()-1)));}
+			
+		).collect(Collectors.toList());
+		
+		for (ActorRef<RacerBehavior1.Command> racer : racerSortedList) {
+			
+			System.out.println( racer.path().toString().substring(racer.path().toString().length()-1)+ " : "  + new String (new char[currentPositionMap.get(racer) * displayLength / 100]).replace('\0', '*'));
+	
 		}
+		/*
+		 * int i =0; for (ActorRef<RacerBehavior1.Command> racer :
+		 * currentPositionMap.keySet()) { if(currentPositionMap.get(racer)==100) {
+		 * System.out.println(i + " : " + new String (new
+		 * char[currentPositionMap.get(racer) * displayLength / 100]).replace('\0',
+		 * '*')); } }
+		 */
 	}
 	
 	public interface Command extends Serializable{
@@ -114,7 +134,7 @@ public class RacerControllerBehavior1 extends AbstractBehavior<RacerControllerBe
 					start=System.currentTimeMillis();
 					currentPositionMap=new HashMap<>();
 					finishingTimes = new HashMap<>();
-					for(int i=1;i<=10;i++) {
+					for(int i=0;i<=9;i++) {
 						
 						ActorRef<RacerBehavior1.Command> racer= getContext()
 								.spawn(RacerBehavior1.create(), "racer"+i);
@@ -149,7 +169,11 @@ public class RacerControllerBehavior1 extends AbstractBehavior<RacerControllerBe
 					
 					return this;
 				}).onMessage(RacerFinishedCommand.class, message->{
+					
+					currentPositionMap.put(message.getRacer(), raceLength);
 					finishingTimes.put(message.getRacer(), System.currentTimeMillis());
+					displayRace();
+					getContext().getLog().info(message.getRacer().path()+" finished");
 					if(finishingTimes.size()==10) {
 						
 						return raceCompleteMessageHandler();
@@ -181,21 +205,14 @@ public class RacerControllerBehavior1 extends AbstractBehavior<RacerControllerBe
 				.build();
 	}
 	public void displayResult() {
-		System.out.println("Results");
-		
-		finishingTimes.values().stream().sorted().forEach(it->{
-			
-			for(ActorRef<RacerBehavior1.Command> racer : finishingTimes.keySet()) {
-				
-				
-				if(finishingTimes.get(racer)==it) {
-					System.out.println("Racer "+racer+" finished in "+(it-start)/1000 +" seconds");
-				}
-			}
-			
-			
-		});
-		
-	}
+        System.out.println("Results");
+        finishingTimes.values().stream().sorted().forEach(it -> {
+            for (ActorRef<RacerBehavior1.Command> key : finishingTimes.keySet()) {
+                if (finishingTimes.get(key) == it) {
+                    String racerId = key.path().toString().substring(key.path().toString().length() -1);
+                    System.out.println("Racer " + racerId + " finished in " + ( (double)it - start ) / 1000 + " seconds.");
+                }
+            }
+        });}
 	
 }

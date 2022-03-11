@@ -157,7 +157,8 @@ public class RacerBehavior1 extends AbstractBehavior<RacerBehavior1.Command>{
 		
 		return newReceiveBuilder()
 				.onMessage(PositionCommand.class, message->{
-									
+					//System.out.println(getContext().getSelf().path()+" finished");
+					
 					message.getController().tell(new RacerControllerBehavior1.RacerUpdateCommand(getContext().getSelf(), raceLength));
 					message.getController().tell(new RacerControllerBehavior1.RacerFinishedCommand(getContext().getSelf()));
 					
